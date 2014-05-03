@@ -12,11 +12,7 @@ using JetBrains.ReSharper.Psi.CSharp.Tree;
 using JetBrains.ReSharper.Psi.Tree;
 using JetBrains.TextControl;
 using JetBrains.Util;
-using JetBrains.Util.Logging;
-
 using MessageBox=JetBrains.Util.MessageBox;
-
-using JetBrains.ReSharper.Psi.Files;
 
 namespace AgentSmith.SmartPaste
 {
@@ -51,8 +47,9 @@ namespace AgentSmith.SmartPaste
                     nextExecute();
                     return;
                 }
-                solution.GetPsiServices()
-	                    .Transactions.Execute("SmartPaste", () => ExecuteEx(solution, context));
+                PsiManager manager = PsiManager.GetInstance(solution);
+                manager.DoTransaction(
+                    () => ExecuteEx(solution, context), "SmartPaste");
             }
         }
 
@@ -64,7 +61,8 @@ namespace AgentSmith.SmartPaste
 			IDocument document = context.GetData(JetBrains.DocumentModel.DataConstants.DOCUMENT);
 
             if (editor == null || document == null) throw new ArgumentException("context");
-			ICSharpFile file = solution.GetPsiServices().GetPsiFile<CSharpLanguage>(new DocumentRange(editor.Document, editor.Caret.Offset())) as ICSharpFile;
+
+			ICSharpFile file = PsiManager.GetInstance(solution).GetPsiFile<CSharpLanguage>(new DocumentRange(editor.Document, editor.Caret.Offset())) as ICSharpFile;
             if (file == null) return;
             
             ITreeNode element = file.FindNodeAt(new TreeTextRange(new TreeOffset(editor.Caret.Offset())));

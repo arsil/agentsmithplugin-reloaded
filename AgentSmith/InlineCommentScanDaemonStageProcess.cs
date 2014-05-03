@@ -59,7 +59,7 @@ namespace AgentSmith
         /// <param name="commiter">The function to call when we've finished the stage to report the results.</param>
         public void Execute(Action<DaemonStageResult> commiter)
         {
-            IFile file = _daemonProcess.SourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
+            IFile file = _daemonProcess.SourceFile.GetNonInjectedPsiFile(CSharpLanguage.Instance);
             if (file == null)
             {
                 return;
@@ -126,25 +126,18 @@ namespace AgentSmith
                             if (SpellCheckUtil.ShouldSpellCheck(humpToken.Value, settings.CompiledWordsToIgnore) &&
                                 !spellChecker.TestWord(humpToken.Value, true))
                             {
-								//int start = token.GetTreeStartOffset().Offset + wordLexer.TokenStart;
-								//int end = start + tokenText.Length;
+                                int start = token.GetTreeStartOffset().Offset + wordLexer.TokenStart;
+                                int end = start + tokenText.Length;
 
-								//var range = new TextRange(start, end);
-								//var documentRange = new DocumentRange(document, range);
-	                            DocumentRange documentRange =
-		                            token.GetContainingFile().TranslateRangeForHighlighting(token.GetTreeTextRange());
-								documentRange = documentRange.ExtendLeft(-wordLexer.TokenStart);
-								documentRange = documentRange.ExtendRight(-1*(documentRange.GetText().Length - tokenText.Length));
-
-
+                                TextRange range = new TextRange(start, end);
+                                DocumentRange documentRange = new DocumentRange(document, range);
                                 TextRange textRange = new TextRange(humpToken.Start - wordLexer.TokenStart,
                                     humpToken.End - wordLexer.TokenStart);
-	                            //string word = document.GetText(range);
-	                            string word = documentRange.GetText();
+
                                 highlightings.Add(
                                     new HighlightingInfo(
                                         documentRange,
-                                        new StringSpellCheckHighlighting(word, documentRange,
+                                        new StringSpellCheckHighlighting(document.GetText(range), documentRange,
                                             humpToken.Value, textRange,
                                             solution, spellChecker, settingsStore)));
 

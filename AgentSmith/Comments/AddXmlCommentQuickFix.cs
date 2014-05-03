@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
 using JetBrains.ReSharper.Feature.Services.Bulbs;
@@ -36,9 +34,8 @@ namespace AgentSmith.Comments
 
         #region IQuickFix Members
 
-	    public IEnumerable<IntentionAction> CreateBulbItems() {
-		    return new AddCommentBulbItem(_declaration).ToContextAction();
-
+	    public void CreateBulbItems(BulbMenu menu, Severity severity) {
+			menu.ArrangeQuickFix(new AddCommentBulbItem(_declaration), severity);
 	    }
 
 	    /// <summary>
@@ -84,9 +81,10 @@ namespace AgentSmith.Comments
         /// <param name="textControl">The text control that is currently open</param>
         public void Execute(ISolution solution, ITextControl textControl)
         {
-            if (solution.GetPsiServices().Caches.WaitForCaches("Add Comment Bulb Item"))
+            if (solution.GetPsiServices().CacheManager.WaitForCaches("Add Comment Bulb Item","Cancel"))
             {
-                solution.GetPsiServices().Transactions.Execute(GetType().Name, () => ExecuteEx(solution, textControl));
+                PsiManager manager = PsiManager.GetInstance(solution);
+                manager.DoTransaction(() => this.ExecuteEx(solution, textControl), GetType().Name);
             }
         }
 

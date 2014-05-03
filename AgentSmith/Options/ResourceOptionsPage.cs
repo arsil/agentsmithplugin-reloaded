@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using JetBrains.Annotations;
 using JetBrains.Application.Settings;
 using JetBrains.DataFlow;
-using JetBrains.UI.Application;
 using JetBrains.UI.Options;
 using JetBrains.UI.Options.Helpers;
 
@@ -18,8 +17,8 @@ namespace AgentSmith.Options {
 
 		private ResXOptionsUI _optionsUI;
 
-		public ResourceOptionsPage([NotNull] Lifetime lifetime, OptionsSettingsSmartContext settingsSmartContext, IUIApplication environment)
-			: base(lifetime, environment, PID)
+		public ResourceOptionsPage([NotNull] Lifetime lifetime, OptionsSettingsSmartContext settingsSmartContext)
+			: base(lifetime, PID)
 		{
 			_settings = settingsSmartContext;
 			_optionsUI = new ResXOptionsUI();

@@ -12,7 +12,6 @@ using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.Impl.Caches2;
-using JetBrains.ReSharper.Psi.Modules;
 using JetBrains.ReSharper.Psi.Tree;
 using JetBrains.ReSharper.Psi.Xml;
 using JetBrains.ReSharper.Psi.Xml.Tree;
@@ -50,7 +49,7 @@ namespace AgentSmith.ResX
 
             ResXSettings settings = _settingsStore.GetKey<ResXSettings>(SettingsOptimization.OptimizeDefault);
 
-            IAttributesSet moduleAttributes = _file.GetSolution().GetPsiServices().Symbols.GetModuleAttributes(module, module.GetContextFromModule());
+            IAttributesSet moduleAttributes = _file.GetSolution().GetPsiServices().CacheManager.GetModuleAttributes(module);
             string defaultResXDic = "en-US";
             IList<IAttributeInstance> attributes = moduleAttributes
                 .GetAttributeInstances(new ClrTypeName(typeof(NeutralResourcesLanguageAttribute).FullName), false);
@@ -97,7 +96,7 @@ namespace AgentSmith.ResX
         private IList<IXmlToken> getStringsToCheck()
         {
             IList<IXmlToken> tokens = new List<IXmlToken>();
-            IXmlFile xmlFile = _file.GetTheOnlyPsiFile(XmlLanguage.Instance) as IXmlFile;
+            IXmlFile xmlFile = _file.GetNonInjectedPsiFile<XmlLanguage>() as IXmlFile;
 
             if (xmlFile != null)
             {

@@ -101,7 +101,7 @@ namespace AgentSmith.SpellCheck
         public class WordTokenType : TokenNodeTypeBase
         {
             public WordTokenType()
-                : base("WORD", 29841) //some unique index, usually it starts with 1000
+                : base("WORD")
             {
             }
         }

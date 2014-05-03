@@ -21,9 +21,9 @@ namespace AgentSmith.Identifiers {
 			_highlighting = highlighting;
 		}
 
-		public IEnumerable<IntentionAction> CreateBulbItems() {
-			return CreateItems()
-				.ToContextAction();
+		public void CreateBulbItems(BulbMenu menu, Severity severity) {
+			IEnumerable<IBulbAction> items = CreateItems();
+			menu.ArrangeQuickFixes(items.Select(i => new Pair<IBulbAction, Severity>(i, severity)));
 		}
 
 		public bool IsAvailable(IUserDataHolder cache) {

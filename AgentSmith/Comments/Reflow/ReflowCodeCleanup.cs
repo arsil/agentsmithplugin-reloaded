@@ -40,24 +40,25 @@ namespace AgentSmith.Comments.Reflow
 
         public bool IsAvailable(IPsiSourceFile sourceFile)
         {
-			return sourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance) != null;
+			return sourceFile.GetNonInjectedPsiFile<CSharpLanguage>() != null;
         }
 
         public void Process(IPsiSourceFile sourceFile, IRangeMarker rangeMarker, CodeCleanupProfile profile, IProgressIndicator progressIndicator)
         {
-			var file = sourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
+			var file = sourceFile.GetNonInjectedPsiFile<CSharpLanguage>();
             if (file == null)
                 return;
 
             if (!profile.GetSetting(DescriptorInstance))
                 return;
 
-            file.GetPsiServices().Transactions.Execute("Reflow XML Documentation Comments",
+            file.GetPsiServices().PsiManager.DoTransaction(
                 () =>
                 {
                     using (_shellLocks.UsingWriteLock())
                         file.ProcessChildren<IDocCommentBlockNode>(node => CommentReflowAction.ReFlowCommentBlockNode(file.GetSolution(), progressIndicator, node));
-                });
+                },
+                "Reflow XML Documentation Comments");
         }
 
         public PsiLanguageType LanguageType

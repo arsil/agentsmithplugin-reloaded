@@ -11,7 +11,7 @@ using AgentSmith.SpellCheck.NetSpell;
 using JetBrains.Application.Settings;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Psi;
-using JetBrains.Util.Logging;
+using JetBrains.Util;
 
 namespace AgentSmith.SpellCheck
 {
@@ -140,8 +140,8 @@ namespace AgentSmith.SpellCheck
 
         private static string GetDictPath(string dictionaryName)
         {
-			return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase).LocalPath),
-				String.Format("dic\\{0}.dic", dictionaryName));
+            return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath),
+                String.Format("dic\\{0}.dic", dictionaryName));
         }
     }
 }

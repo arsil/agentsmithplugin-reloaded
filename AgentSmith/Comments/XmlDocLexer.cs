@@ -7,7 +7,6 @@ using JetBrains.ReSharper.Psi.Tree;
 using JetBrains.ReSharper.Psi.Xml.XmlDocComments;
 using JetBrains.Text;
 using JetBrains.Util;
-using JetBrains.Util.Logging;
 
 namespace AgentSmith.Comments
 {

@@ -37,19 +37,18 @@ namespace AgentSmith.Comments.Reflow
 
             IPsiSourceFile sourceFile = projectFile.ToSourceFile();
             if (sourceFile == null) return;
-			IFile file = sourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
+			IFile file = sourceFile.GetNonInjectedPsiFile<CSharpLanguage>();
             if (file == null) return;
 
-            file.GetPsiServices().Transactions.Execute(
-				"Reflow XML Documentation Comments",
+            file.GetPsiServices().PsiManager.DoTransaction(
                 () =>
                     {
                         using (WriteLockCookie.Create())
                             file.ProcessChildren<IDocCommentBlockOwnerNode>(x =>
                                                                             CommentReflowAction.ReFlowCommentBlockNode(x.GetSolution(), null, x.GetDocCommentBlockNode())
                                 );
-                    }
-                );
+                    },
+                "Reflow XML Documentation Comments");
         }
 
         #endregion
