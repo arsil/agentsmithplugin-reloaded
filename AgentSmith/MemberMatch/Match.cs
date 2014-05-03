@@ -188,31 +188,31 @@ namespace AgentSmith.MemberMatch
             set { _paramDirection = value; }
         }
 
-        public void Prepare(ISolution solution, PsiManager manager)
-        {
-            _markedWithAttributeType = null;
-            _inheritedFromType = null;
-            _isOfTypeType = null;
-
-            CacheManager cacheManager = solution.GetPsiServices().CacheManager;
-                    
-            IDeclarationsCache cache = cacheManager.GetDeclarationsCache(DeclarationCacheLibraryScope.FULL, true);
-            if (!string.IsNullOrEmpty(_markedWithAttribute))
-            {
+		//public void Prepare(ISolution solution, PsiManager manager)
+		//{
+		//	_markedWithAttributeType = null;
+		//	_inheritedFromType = null;
+		//	_isOfTypeType = null;
+			
+		//	IPsiModule psiModule = new EmptyPsiModule(solution);
+		//	ISymbolScope symbolScope = solution.GetPsiServices()
+		//							 .Symbols.GetSymbolScope(LibrarySymbolScope.FULL, true, psiModule.GetContextFromModule());
+		//	if (!string.IsNullOrEmpty(_markedWithAttribute))
+		//	{
                 
-                _markedWithAttributeType = cache.GetTypeElementByCLRName(_markedWithAttribute);
-            }
+		//		_markedWithAttributeType = symbolScope.GetTypeElementByCLRName(_markedWithAttribute);
+		//	}
 
-            if (!string.IsNullOrEmpty(_inheritedFrom))
-            {
-                _inheritedFromType = cache.GetTypeElementByCLRName(_inheritedFrom);
-            }
+		//	if (!string.IsNullOrEmpty(_inheritedFrom))
+		//	{
+		//		_inheritedFromType = symbolScope.GetTypeElementByCLRName(_inheritedFrom);
+		//	}
 
-            if (!string.IsNullOrEmpty(_isOfType))
-            {
-                _isOfTypeType = cache.GetTypeElementByCLRName(_isOfType);
-            }
-        }
+		//	if (!string.IsNullOrEmpty(_isOfType))
+		//	{
+		//		_isOfTypeType = symbolScope.GetTypeElementByCLRName(_isOfType);
+		//	}
+		//}
 
         public bool IsMatch(IDeclaration declaration, bool useEffectiveRights)
         {
@@ -380,7 +380,7 @@ namespace AgentSmith.MemberMatch
 
             foreach (IAttributeInstance attribute in attributesOwner.GetAttributeInstances(false))
             {
-                if (attribute.AttributeType.GetTypeElement() == _markedWithAttributeType)
+                if (Equals(attribute.AttributeType.GetTypeElement(), _markedWithAttributeType))
                 {
                     return true;
                 }

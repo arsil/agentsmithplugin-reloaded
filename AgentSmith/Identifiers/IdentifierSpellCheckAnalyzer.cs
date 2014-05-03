@@ -97,7 +97,8 @@ namespace AgentSmith.Identifiers
                     {
                         highlightings.Add(
                             new HighlightingInfo(
-                        declaration.GetNameDocumentRange(),
+								declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
+						//declaration.GetNameDocumentRange(),
                             new IdentifierSpellCheckHighlighting(declaration, token, _solution, this._identifierSpellChecker, _settingsStore)));
                     }
                 }

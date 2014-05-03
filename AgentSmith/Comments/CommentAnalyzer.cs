@@ -224,7 +224,8 @@ namespace AgentSmith.Comments
             {
                 highlightings.Add(
                     new HighlightingInfo(
-                        declaration.GetNameDocumentRange(),
+						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
+                        //declaration.GetNameDocumentRange(),
                         new PrivateMemberMissingXmlCommentHighlighting(declaration, match)));
                 return;
             }
@@ -234,7 +235,8 @@ namespace AgentSmith.Comments
             {
                 highlightings.Add(
                     new HighlightingInfo(
-                        declaration.GetNameDocumentRange(),
+						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
+                        //declaration.GetNameDocumentRange(),
                         new InternalMemberMissingXmlCommentHighlighting(declaration, match)));
                 return;
             }
@@ -244,7 +246,8 @@ namespace AgentSmith.Comments
             {
                 highlightings.Add(
                     new HighlightingInfo(
-                        declaration.GetNameDocumentRange(),
+						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
+                        //declaration.GetNameDocumentRange(),
                         new PublicMemberMissingXmlCommentHighlighting(declaration, match)));
                 // return;
             }

@@ -37,7 +37,7 @@ namespace AgentSmith.Comments.Reflow
 
             IPsiSourceFile sourceFile = projectFile.ToSourceFile();
             if (sourceFile == null) return;
-			IFile file = sourceFile.GetNonInjectedPsiFile<CSharpLanguage>();
+			IFile file = sourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
             if (file == null) return;
 
             file.GetPsiServices().PsiManager.DoTransaction(
