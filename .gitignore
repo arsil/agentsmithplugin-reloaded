@@ -1,0 +1,6 @@
+packages/Bin
+packages/Targets
+packages/Tools
+packages/Samples
+packages/*.rtf
+packages/*.html
