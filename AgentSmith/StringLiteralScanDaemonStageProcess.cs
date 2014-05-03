@@ -59,7 +59,7 @@ namespace AgentSmith
 
             var highlightings = new List<HighlightingInfo>();
 
-            IFile file = this._daemonProcess.SourceFile.GetNonInjectedPsiFile(CSharpLanguage.Instance);
+            IFile file = this._daemonProcess.SourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
             if (file == null)
             {
                 return;

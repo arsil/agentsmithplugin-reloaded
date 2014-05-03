@@ -4,3 +4,7 @@ packages/Tools
 packages/Samples
 packages/*.rtf
 packages/*.html
+AgentSmith/bin
+AgentSmith/obj
+AgentSmith.Test/bin
+AgentSmith.Test/obj

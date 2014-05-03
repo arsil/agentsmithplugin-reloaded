@@ -15,7 +15,7 @@ namespace AgentSmith
     internal class InlineCommentScanDaemonStage : IDaemonStage
     {
 	    public IEnumerable<IDaemonStageProcess> CreateProcess(IDaemonProcess process, IContextBoundSettingsStore settings, DaemonProcessKind processKind) {
-			IFile psiFile = process.SourceFile.GetNonInjectedPsiFile(CSharpLanguage.Instance);
+			IFile psiFile = process.SourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
 		    if (psiFile != null) {
 			    yield return new InlineCommentScanDaemonStageProcess(process, settings);
 		    }
