@@ -96,7 +96,7 @@ namespace AgentSmith.ResX
         private IList<IXmlToken> getStringsToCheck()
         {
             IList<IXmlToken> tokens = new List<IXmlToken>();
-            IXmlFile xmlFile = _file.GetNonInjectedPsiFile<XmlLanguage>() as IXmlFile;
+            IXmlFile xmlFile = _file.GetTheOnlyPsiFile(XmlLanguage.Instance) as IXmlFile;
 
             if (xmlFile != null)
             {
