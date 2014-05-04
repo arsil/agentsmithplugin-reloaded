@@ -8,3 +8,4 @@ AgentSmith/bin
 AgentSmith/obj
 AgentSmith.Test/bin
 AgentSmith.Test/obj
+*.suo
