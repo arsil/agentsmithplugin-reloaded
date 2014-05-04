@@ -9,6 +9,7 @@ using AgentSmith.Options;
 using JetBrains.Application.Settings;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
+using JetBrains.ReSharper.Daemon.Stages;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
@@ -73,8 +74,11 @@ namespace AgentSmith
 
 
 
-        private void CheckMember(IClassMemberDeclaration declaration,
-                                                List<HighlightingInfo> highlightings, CommentAnalyzer commentAnalyzer, IdentifierSpellCheckAnalyzer identifierAnalyzer)
+        private void CheckMember(
+            IClassMemberDeclaration declaration, 
+            IHighlightingConsumer highlightingConsumer, 
+            CommentAnalyzer commentAnalyzer, 
+            IdentifierSpellCheckAnalyzer identifierAnalyzer)
         {
             if (declaration is IConstructorDeclaration && declaration.IsStatic)
             {
@@ -87,7 +91,7 @@ namespace AgentSmith
             // Documentation doesn't work properly on multiple declarations (as of R# 6.1) so see if we can get it from the parent
             XmlNode docNode = null;
             IDocCommentBlockNode commentBlock;
-            IMultipleDeclarationMember multipleDeclarationMember = declaration as IMultipleDeclarationMember;
+            var multipleDeclarationMember = declaration as IMultipleDeclarationMember;
             if (multipleDeclarationMember != null)
             {
                 // get the parent
@@ -106,9 +110,9 @@ namespace AgentSmith
 
             }
 
-            commentAnalyzer.CheckMemberHasComment(declaration, docNode, highlightings);
-            commentAnalyzer.CheckCommentSpelling(declaration, commentBlock, highlightings, true);
-            identifierAnalyzer.CheckMemberSpelling(declaration, highlightings, true);
+            commentAnalyzer.CheckMemberHasComment(declaration, docNode, highlightingConsumer);
+            commentAnalyzer.CheckCommentSpelling(declaration, commentBlock, highlightingConsumer, true);
+            identifierAnalyzer.CheckMemberSpelling(declaration, highlightingConsumer, true);
         }
 
         /// <summary>
@@ -118,7 +122,9 @@ namespace AgentSmith
         public void Execute(Action<DaemonStageResult> commiter)
         {
 
-            var highlightings = new List<HighlightingInfo>();
+            //var highlightings = new List<HighlightingInfo>();
+             IHighlightingConsumer highlightingConsumer = new DefaultHighlightingConsumer(
+                 this, _settingsStore);
 
             IFile file = _daemonProcess.SourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
             if (file == null)
@@ -126,20 +132,19 @@ namespace AgentSmith
                 return;
             }
 
-            StringSettings stringSettings = _settingsStore.GetKey<StringSettings>(SettingsOptimization.OptimizeDefault);
-
-
             if (!_daemonProcess.FullRehighlightingRequired) return;
 
-            CommentAnalyzer commentAnalyzer = new CommentAnalyzer(_solution, _settingsStore);
-            IdentifierSpellCheckAnalyzer identifierAnalyzer = new IdentifierSpellCheckAnalyzer(_solution, _settingsStore, _daemonProcess.SourceFile);
+            var commentAnalyzer = new CommentAnalyzer(_solution, _settingsStore);
+            var identifierAnalyzer = new IdentifierSpellCheckAnalyzer(_solution, _settingsStore, _daemonProcess.SourceFile);
 
-            file.ProcessChildren<IClassMemberDeclaration>(declaration => this.CheckMember(declaration, highlightings, commentAnalyzer, identifierAnalyzer));
+            file.ProcessChildren<IClassMemberDeclaration>(
+                declaration => CheckMember(
+                    declaration, highlightingConsumer, commentAnalyzer, identifierAnalyzer));
 
             if (_daemonProcess.InterruptFlag) return;
             try
             {
-                commiter(new DaemonStageResult(highlightings));
+                commiter(new DaemonStageResult(highlightingConsumer.Highlightings));
             } catch
             {
                 // Do nothing if it doesn't work.

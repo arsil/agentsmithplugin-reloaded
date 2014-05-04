@@ -11,6 +11,7 @@ using JetBrains.Application.Settings;
 using JetBrains.DocumentModel;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
+using JetBrains.ReSharper.Daemon.Stages;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
 using JetBrains.ReSharper.Psi.Parsing;
@@ -62,8 +63,11 @@ namespace AgentSmith.Comments
 
 
 
-        public void CheckCommentSpelling(IClassMemberDeclaration decl, IDocCommentBlockNode docNode,
-                                  List<HighlightingInfo> highlightings, bool spellCheck)
+        public void CheckCommentSpelling(
+            IClassMemberDeclaration decl, 
+            IDocCommentBlockNode docNode,
+            IHighlightingConsumer highlightingConsumer, 
+            bool spellCheck)
         {
 
             if (docNode == null) return;
@@ -82,21 +86,26 @@ namespace AgentSmith.Comments
                          IdentifierResolver.IsKeyword(decl, _solution, word)) &&
                         IdentifierResolver.AnalyzeForMetaTagging(word, _xmlDocumentationSettings.CompiledWordsToIgnoreForMetatagging))
                     {
-                        highlightings.Add(
-                            new HighlightingInfo(
-                                range, new CanBeSurroundedWithMetatagsHighlight(word,
-                            range, decl, _solution)));
+                        var highlighting = new CanBeSurroundedWithMetatagsHighlight(word,
+                            range, decl, _solution);
+
+                        highlightingConsumer.AddHighlighting(highlighting, range, file);
                     }
                     else if (spellCheck)
                     {
-                        this.CheckWordSpelling(decl, wordRange, highlightings, range);
+                        this.CheckWordSpelling(decl, wordRange, highlightingConsumer, range, file);
                     }
                 }
             }
         }
 
-        private void CheckWordSpelling(IClassMemberDeclaration decl, Range wordRange,
-                                       List<HighlightingInfo> highlightings, DocumentRange range)
+        private void CheckWordSpelling(
+            IClassMemberDeclaration decl, 
+            Range wordRange, 
+            IHighlightingConsumer 
+            highlightingConsumer, 
+            DocumentRange range, 
+            IFile file)
         {
 
             // If we dont have a spell checker then go no further
@@ -116,11 +125,11 @@ namespace AgentSmith.Comments
                 if (SpellCheckUtil.ShouldSpellCheck(humpToken.Value, _xmlDocumentationSettings.CompiledWordsToIgnore) &&
                     !this._xmlDocumentationSpellChecker.TestWord(humpToken.Value, true))
                 {
+                    var highlighting = new WordIsNotInDictionaryHighlight(wordRange.Word, range,
+                        humpToken, _solution, this._xmlDocumentationSpellChecker, _settingsStore);
 
-                    highlightings.Add(
-                        new HighlightingInfo(
-                            range, new WordIsNotInDictionaryHighlight(wordRange.Word, range,
-                                                                          humpToken, _solution, this._xmlDocumentationSpellChecker, _settingsStore)));
+                    highlightingConsumer.AddHighlighting(highlighting, range, file);
+
                     break;
                 }
             }
@@ -183,15 +192,16 @@ namespace AgentSmith.Comments
         }
 
 
-
         /// <summary>
         /// Check that the given declaration has an xml documentation comment.
         /// </summary>
         /// <param name="declaration">The declaration to check</param>
         /// <param name="docNode">The documentation node to check.</param>
-        /// <param name="highlightings">The list of highlights (errors) that were found - add to this any new issues</param>
-        public void CheckMemberHasComment(IClassMemberDeclaration declaration, XmlNode docNode,
-                                                List<HighlightingInfo> highlightings)
+        /// <param name="highlightingConsumer">Highlighting consumer</param>
+        public void CheckMemberHasComment(
+            IClassMemberDeclaration declaration, 
+            XmlNode docNode, 
+            IHighlightingConsumer highlightingConsumer)
         {
 
             // Only process this one if its range is invalid.
@@ -217,38 +227,40 @@ namespace AgentSmith.Comments
 
             Match[] privateMembers = new[] { new Match(Declaration.Any, AccessLevels.Private) };
 
-
-
             Match match = ComplexMatchEvaluator.IsMatch(declaration, privateMembers, null, true);
+
             if (match != null)
             {
-                highlightings.Add(
-                    new HighlightingInfo(
-						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
-                        //declaration.GetNameDocumentRange(),
-                        new PrivateMemberMissingXmlCommentHighlighting(declaration, match)));
+                var highlighting = new PrivateMemberMissingXmlCommentHighlighting(declaration, match);
+
+                var file = declaration.GetContainingFile();
+                var range = file.TranslateRangeForHighlighting(declaration.GetNameRange());
+                highlightingConsumer.AddHighlighting(highlighting, range, file);
+
                 return;
             }
 
             match = ComplexMatchEvaluator.IsMatch(declaration, internalMembers, null, true);
             if (match != null)
             {
-                highlightings.Add(
-                    new HighlightingInfo(
-						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
-                        //declaration.GetNameDocumentRange(),
-                        new InternalMemberMissingXmlCommentHighlighting(declaration, match)));
+                var highlighting = new InternalMemberMissingXmlCommentHighlighting(declaration, match);
+
+                var file = declaration.GetContainingFile();
+                var range = file.TranslateRangeForHighlighting(declaration.GetNameRange());
+                highlightingConsumer.AddHighlighting(highlighting, range, file);
+
                 return;
             }
 
             match = ComplexMatchEvaluator.IsMatch(declaration, publicMembers, null, true);
             if (match != null)
             {
-                highlightings.Add(
-                    new HighlightingInfo(
-						declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
-                        //declaration.GetNameDocumentRange(),
-                        new PublicMemberMissingXmlCommentHighlighting(declaration, match)));
+                var highlighting = new PublicMemberMissingXmlCommentHighlighting(declaration, match);
+
+                var file = declaration.GetContainingFile();
+                var range = file.TranslateRangeForHighlighting(declaration.GetNameRange());
+                highlightingConsumer.AddHighlighting(highlighting, range, file);
+
                 // return;
             }
         }

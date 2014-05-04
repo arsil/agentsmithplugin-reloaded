@@ -10,12 +10,11 @@ using JetBrains.Application.Settings;
 using JetBrains.DocumentModel;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
+using JetBrains.ReSharper.Daemon.Stages;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp;
-using JetBrains.ReSharper.Psi.CSharp.Parsing;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
 using JetBrains.ReSharper.Psi.Parsing;
-using JetBrains.ReSharper.Psi.Services;
 using JetBrains.ReSharper.Psi.Tree;
 using JetBrains.Util;
 
@@ -64,15 +63,16 @@ namespace AgentSmith
             {
                 return;
             }
-			var highlightings = new List<HighlightingInfo>();
+
+            var highlightingConsumer = new DefaultHighlightingConsumer(this, _settingsStore);
             var commentSettings = _settingsStore.GetKey<CommentSettings>(SettingsOptimization.OptimizeDefault);
 
-
-            file.ProcessChildren<ICSharpCommentNode>(commentNode => CheckComment(commentNode, highlightings, commentSettings));
+            file.ProcessChildren<ICSharpCommentNode>(commentNode
+                => CheckComment(commentNode, highlightingConsumer, commentSettings));
 
             try
             {
-                commiter(new DaemonStageResult(highlightings));
+                commiter(new DaemonStageResult(highlightingConsumer.Highlightings));
             }
             catch
             {
@@ -81,8 +81,9 @@ namespace AgentSmith
         }
 
 
-        public void CheckComment(ICSharpCommentNode commentNode,
-                                List<HighlightingInfo> highlightings, CommentSettings settings)
+        public void CheckComment(
+            ICSharpCommentNode commentNode,
+            IHighlightingConsumer highlightingConsumer, CommentSettings settings)
         {
             // Ignore it unless it's something we're re-evalutating
             if (!_daemonProcess.IsRangeInvalidated(commentNode.GetDocumentRange())) return;
@@ -97,12 +98,14 @@ namespace AgentSmith
                 commentNode.GetDocumentRange().Document,
                 commentNode,
                 spellChecker,
-                _solution, highlightings, _settingsStore, settings);
+                _solution, highlightingConsumer, _settingsStore, settings);
             
         }
 
-        public static void SpellCheck(IDocument document, ITokenNode token, ISpellChecker spellChecker,
-                                               ISolution solution, List<HighlightingInfo> highlightings, IContextBoundSettingsStore settingsStore, CommentSettings settings)
+        public static void SpellCheck(
+            IDocument document, ITokenNode token, ISpellChecker spellChecker,
+            ISolution solution, IHighlightingConsumer highlightingConsumer, 
+            IContextBoundSettingsStore settingsStore, CommentSettings settings)
         {
             if (spellChecker == null) return;
 
@@ -126,28 +129,30 @@ namespace AgentSmith
                             if (SpellCheckUtil.ShouldSpellCheck(humpToken.Value, settings.CompiledWordsToIgnore) &&
                                 !spellChecker.TestWord(humpToken.Value, true))
                             {
-								//int start = token.GetTreeStartOffset().Offset + wordLexer.TokenStart;
-								//int end = start + tokenText.Length;
+                                //int start = token.GetTreeStartOffset().Offset + wordLexer.TokenStart;
+                                //int end = start + tokenText.Length;
 
-								//var range = new TextRange(start, end);
-								//var documentRange = new DocumentRange(document, range);
-	                            DocumentRange documentRange =
-		                            token.GetContainingFile().TranslateRangeForHighlighting(token.GetTreeTextRange());
-								documentRange = documentRange.ExtendLeft(-wordLexer.TokenStart);
-								documentRange = documentRange.ExtendRight(-1*(documentRange.GetText().Length - tokenText.Length));
+                                //var range = new TextRange(start, end);
+                                //var documentRange = new DocumentRange(document, range);
+                                DocumentRange documentRange =
+                                    token.GetContainingFile().TranslateRangeForHighlighting(token.GetTreeTextRange());
+                                documentRange = documentRange.ExtendLeft(-wordLexer.TokenStart);
+                                documentRange = documentRange.ExtendRight(-1*(documentRange.GetText().Length - tokenText.Length));
 
 
                                 TextRange textRange = new TextRange(humpToken.Start - wordLexer.TokenStart,
                                     humpToken.End - wordLexer.TokenStart);
-	                            //string word = document.GetText(range);
-	                            string word = documentRange.GetText();
-                                highlightings.Add(
-                                    new HighlightingInfo(
-                                        documentRange,
-                                        new StringSpellCheckHighlighting(word, documentRange,
-                                            humpToken.Value, textRange,
-                                            solution, spellChecker, settingsStore)));
+                                //string word = document.GetText(range);
+                                string word = documentRange.GetText();
 
+
+                                var highlighting = new StringSpellCheckHighlighting(
+                                    document.GetText(textRange), documentRange,
+                                    humpToken.Value, textRange,
+                                    solution, spellChecker, settingsStore);
+                                var file = token.GetContainingFile();
+
+                                highlightingConsumer.AddHighlighting(highlighting, documentRange, file);
 
                                 break;
                             }

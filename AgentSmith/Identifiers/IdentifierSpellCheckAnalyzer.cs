@@ -7,6 +7,7 @@ using AgentSmith.SpellCheck.NetSpell;
 using JetBrains.Application.Settings;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
+using JetBrains.ReSharper.Daemon.Stages;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp;
 using JetBrains.ReSharper.Psi.CSharp.Tree;
@@ -49,7 +50,10 @@ namespace AgentSmith.Identifiers
             return _policyProvider.IsAbbreviation(word.ToUpper(), _solution);
         }
 
-        public void CheckMemberSpelling(IDeclaration declaration, List<HighlightingInfo> highlightings, bool spellCheck)
+        public void CheckMemberSpelling(
+            IDeclaration declaration,
+            IHighlightingConsumer highlightingConsumer, 
+            bool spellCheck)
         {
             if (this._identifierSpellChecker == null || !spellCheck) return;
 
@@ -93,13 +97,15 @@ namespace AgentSmith.Identifiers
                             break;
                         }
                     }
+
                     if (!found)
                     {
-                        highlightings.Add(
-                            new HighlightingInfo(
-								declaration.GetContainingFile().TranslateRangeForHighlighting(declaration.GetNameRange()),
-						//declaration.GetNameDocumentRange(),
-                            new IdentifierSpellCheckHighlighting(declaration, token, _solution, this._identifierSpellChecker, _settingsStore)));
+                        var highlighting = new IdentifierSpellCheckHighlighting(
+                            declaration, token, _solution, this._identifierSpellChecker, _settingsStore);
+
+                        var file = declaration.GetContainingFile();
+                        var range = declaration.GetNameDocumentRange();
+                        highlightingConsumer.AddHighlighting(highlighting, range, file);
                     }
                 }
             }

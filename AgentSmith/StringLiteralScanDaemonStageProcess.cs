@@ -9,6 +9,7 @@ using AgentSmith.Strings;
 using JetBrains.Application.Settings;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Daemon;
+using JetBrains.ReSharper.Daemon.Stages;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.CSharp;
 using JetBrains.ReSharper.Psi.CSharp.Parsing;
@@ -57,7 +58,7 @@ namespace AgentSmith
         public void Execute(Action<DaemonStageResult> commiter)
         {
 
-            var highlightings = new List<HighlightingInfo>();
+            var highlightingConsumer = new DefaultHighlightingConsumer(this, _settingsStore);
 
             IFile file = this._daemonProcess.SourceFile.GetTheOnlyPsiFile(CSharpLanguage.Instance);
             if (file == null)
@@ -68,11 +69,12 @@ namespace AgentSmith
             StringSettings stringSettings = this._settingsStore.GetKey<StringSettings>(SettingsOptimization.OptimizeDefault);
 
 
-            file.ProcessChildren<ICSharpLiteralExpression>(literalExpression => this.CheckString(literalExpression, highlightings, stringSettings));
+            file.ProcessChildren<ICSharpLiteralExpression>(literalExpression
+                => CheckString(literalExpression, highlightingConsumer, stringSettings));
 
             try
             {
-                commiter(new DaemonStageResult(highlightings));
+                commiter(new DaemonStageResult(highlightingConsumer.Highlightings));
             }
             catch
             {
@@ -81,8 +83,9 @@ namespace AgentSmith
         }
 
 
-        public void CheckString(ICSharpLiteralExpression literalExpression,
-                                List<HighlightingInfo> highlightings, StringSettings settings)
+        public void CheckString(
+            ICSharpLiteralExpression literalExpression,
+            IHighlightingConsumer highlightingConsumer, StringSettings settings)
         {
             //ConstantValue val = literalExpression.ConstantValue;
 
@@ -106,7 +109,7 @@ namespace AgentSmith
                     literalExpression.GetDocumentRange().Document,
                     tokenNode,
                     spellChecker,
-                    this._solution, highlightings, this._settingsStore, settings);
+                    this._solution, highlightingConsumer, this._settingsStore, settings);
             }
         }
         #endregion
